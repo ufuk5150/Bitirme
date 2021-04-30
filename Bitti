@@ -1,0 +1,405 @@
+import cv2
+import time
+from matplotlib import pyplot as plt
+import pyfirmata
+
+if __name__ == '__main__':
+    board = pyfirmata.Arduino('COM6')
+    print("Communication Successfully started")
+
+    def green1():
+        board.digital[2].write(1)
+        board.digital[3].write(0)
+        board.digital[4].write(0)
+
+    def yellow1():
+        board.digital[2].write(0)
+        board.digital[3].write(1)
+        board.digital[4].write(0)
+
+    def red1():
+        board.digital[2].write(0)
+        board.digital[3].write(0)
+        board.digital[4].write(1)
+
+    def yel_red1():
+        board.digital[2].write(0)
+        board.digital[3].write(1)
+        board.digital[4].write(1)
+        time.sleep(2)
+
+    def green2():
+        board.digital[5].write(1)
+        board.digital[6].write(0)
+        board.digital[7].write(0)
+
+    def yellow2():
+        board.digital[5].write(0)
+        board.digital[6].write(1)
+        board.digital[7].write(0)
+
+    def red2():
+        board.digital[5].write(0)
+        board.digital[6].write(0)
+        board.digital[7].write(1)
+
+    def yel_red2():
+        board.digital[5].write(0)
+        board.digital[6].write(1)
+        board.digital[7].write(1)
+        time.sleep(2)
+
+    def green3():
+        board.digital[8].write(1)
+        board.digital[9].write(0)
+        board.digital[10].write(0)
+
+    def yellow3():
+        board.digital[8].write(0)
+        board.digital[9].write(1)
+        board.digital[10].write(0)
+
+    def red3():
+        board.digital[8].write(0)
+        board.digital[9].write(0)
+        board.digital[10].write(1)
+
+    def yel_red3():
+        board.digital[8].write(0)
+        board.digital[9].write(1)
+        board.digital[10].write(1)
+        time.sleep(2),
+
+    def green4():
+        board.digital[11].write(1)
+        board.digital[12].write(0)
+        board.digital[13].write(0)
+
+    def yellow4():
+        board.digital[11].write(0)
+        board.digital[12].write(1)
+        board.digital[13].write(0)
+
+    def red4():
+        board.digital[11].write(0)
+        board.digital[12].write(0)
+        board.digital[13].write(1)
+
+    def yel_red4():
+        board.digital[11].write(0)
+        board.digital[12].write(1)
+        board.digital[13].write(1)
+        time.sleep(2)
+
+cap0 = cv2.VideoCapture(0)
+cap1 = cv2.VideoCapture(1)
+cap2 = cv2.VideoCapture(2)
+cap3 = cv2.VideoCapture(3)
+
+j = 30
+img_counter = 0
+
+while True:
+
+    if img_counter % 4 == 0:
+
+        _, img = cap0.read()
+        img_name = "light1_original{}.png".format(img_counter)
+        cv2.imwrite(img_name, img)
+        img = cv2.imread(img_name, 0)
+
+        region1 = img[386:696, 0:768]
+        region2 = img[201:386, 0:768]
+        region3 = img[0:201, 0:768]
+
+        cv2.imwrite("light1_region1_frame_{}.png".format(img_counter), region1)
+        cv2.imwrite("light1_region2_frame_{}.png".format(img_counter), region2)
+        cv2.imwrite("light1_region3_frame_{}.png".format(img_counter), region3)
+
+        _, th1 = cv2.threshold(region1, 70, 255, cv2.THRESH_BINARY)
+        _, th2 = cv2.threshold(region2, 70, 255, cv2.THRESH_BINARY)
+        _, th3 = cv2.threshold(region3, 70, 255, cv2.THRESH_BINARY)
+
+        th1_line = th1[0:310, 324:430]
+        th2_line = th2[0:185, 324:430]
+        th3_line = th3[0:201, 324:410]
+
+        cv2.imwrite('thresh1.png', th1)
+        cv2.imwrite('thresh2.png', th2)
+        cv2.imwrite('thresh3.png', th3)
+        cv2.imwrite('thresh1_line.png', th1_line)
+        cv2.imwrite('thresh2_line.png', th2_line)
+        cv2.imwrite('thresh3_line.png', th3_line)
+
+        # total density
+        th1_density = cv2.countNonZero(th1)
+        th2_density = cv2.countNonZero(th2)
+        th3_density = cv2.countNonZero(th3)
+
+        # lines' density
+        th1_line_density = cv2.countNonZero(th1_line)
+        th2_line_density = cv2.countNonZero(th2_line)
+        th3_line_density = cv2.countNonZero(th3_line)
+
+        # only cars' density
+        th1_density = th1_density - th1_line_density
+        th2_density = th2_density - th2_line_density
+        th3_density = th3_density - th3_line_density
+
+        car_number1 = (th1_density / 41000)
+        car_number2 = (th2_density / 19000)
+        car_number3 = (th3_density / 12000)
+
+        total_car_number = (car_number1 + car_number2 + car_number3)
+
+        green_duration = 3 * total_car_number
+        green_duration = round(green_duration)
+
+        print("density of cars in the 1st road: ", total_car_number)
+        print("duration of green: ", green_duration)
+
+        j = green_duration * 10
+        j = int(j)
+        yellow4(), yel_red1()
+        green1(), red2(), red3(), red4()
+
+        while j >= 10:
+            ret, img = cap0.read()
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(img, str(j // 10), (30, 100), font, 4, (0, 255, 0), 5, cv2.LINE_AA)
+            cv2.imshow('Screen', img)
+
+            cv2.waitKey(100)
+            j = j - 1
+
+        img_counter += 1
+
+    elif img_counter % 4 == 1:
+
+        _, img = cap1.read()
+
+        img_name = "light2_original{}.png".format(img_counter)
+        cv2.imwrite(img_name, img)
+        img = cv2.imread(img_name, 0)
+
+        region1 = img[386:696, 0:768]
+        region2 = img[201:386, 0:768]
+        region3 = img[0:201, 0:768]
+
+        cv2.imwrite("light2_region1_frame_{}.png".format(img_counter), region1)
+        cv2.imwrite("light2_region2_frame_{}.png".format(img_counter), region2)
+        cv2.imwrite("light2_region3_frame_{}.png".format(img_counter), region3)
+
+        _, th1 = cv2.threshold(region1, 70, 255, cv2.THRESH_BINARY) 
+        _, th2 = cv2.threshold(region2, 70, 255, cv2.THRESH_BINARY) 
+        _, th3 = cv2.threshold(region3, 70, 255, cv2.THRESH_BINARY)  
+
+        th1_line = th1[0:310, 324:430]
+        th2_line = th2[0:185, 324:430]
+        th3_line = th3[0:201, 324:410]
+
+        cv2.imwrite('thresh1.png', th1)
+        cv2.imwrite('thresh2.png', th2)
+        cv2.imwrite('thresh3.png', th3)
+        cv2.imwrite('thresh1_line.png', th1_line)
+        cv2.imwrite('thresh2_line.png', th2_line)
+        cv2.imwrite('thresh3_line.png', th3_line)
+
+        # total density
+        th1_density = cv2.countNonZero(th1)
+        th2_density = cv2.countNonZero(th2)
+        th3_density = cv2.countNonZero(th3)
+
+        # lines' density
+        th1_line_density = cv2.countNonZero(th1_line)
+        th2_line_density = cv2.countNonZero(th2_line)
+        th3_line_density = cv2.countNonZero(th3_line)
+
+        # only cars' density
+        th1_density = th1_density - th1_line_density
+        th2_density = th2_density - th2_line_density
+        th3_density = th3_density - th3_line_density
+
+        car_number1 = (th1_density / 41000)
+        car_number2 = (th2_density / 19000)
+        car_number3 = (th3_density / 12000)
+
+        total_car_number = (car_number1 + car_number2 + car_number3)
+        green_duration = 3 * total_car_number
+        green_duration = round(green_duration)
+
+        print("density of cars in the 2nd road: ", total_car_number)
+        print("duration of green: ", green_duration)
+
+        j = green_duration * 10
+        j = int(j)
+
+        yellow1(), yel_red2()
+        red1(), green2(), red3(), red4()
+
+        while j >= 10:
+            _, img = cap1.read()
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(img, str(j // 10), (30, 100), font, 4, (0, 255, 0), 5, cv2.LINE_AA)
+
+            cv2.imshow('Screen', img)
+            cv2.waitKey(100)
+            j = j - 1
+
+        img_counter += 1
+    elif img_counter % 4 == 2:
+
+        _, img = cap0.read()
+        img_name = "light1_original{}.png".format(img_counter)
+        cv2.imwrite(img_name, img)
+        img = cv2.imread(img_name, 0)
+
+        region1 = img[386:696, 0:768]
+        region2 = img[201:386, 0:768]
+        region3 = img[0:201, 0:768]
+
+        cv2.imwrite("light1_region1_frame_{}.png".format(img_counter), region1)
+        cv2.imwrite("light1_region2_frame_{}.png".format(img_counter), region2)
+        cv2.imwrite("light1_region3_frame_{}.png".format(img_counter), region3)
+
+        _, th1 = cv2.threshold(region1, 70, 255, cv2.THRESH_BINARY)
+        _, th2 = cv2.threshold(region2, 70, 255, cv2.THRESH_BINARY)
+        _, th3 = cv2.threshold(region3, 70, 255, cv2.THRESH_BINARY)
+
+        th1_line = th1[0:310, 324:430]
+        th2_line = th2[0:185, 324:430]
+        th3_line = th3[0:201, 324:410]
+
+        cv2.imwrite('thresh1.png', th1)
+        cv2.imwrite('thresh2.png', th2)
+        cv2.imwrite('thresh3.png', th3)
+        cv2.imwrite('thresh1_line.png', th1_line)
+        cv2.imwrite('thresh2_line.png', th2_line)
+        cv2.imwrite('thresh3_line.png', th3_line)
+
+        # total density
+        th1_density = cv2.countNonZero(th1)
+        th2_density = cv2.countNonZero(th2)
+        th3_density = cv2.countNonZero(th3)
+
+        # lines' density
+        th1_line_density = cv2.countNonZero(th1_line)
+        th2_line_density = cv2.countNonZero(th2_line)
+        th3_line_density = cv2.countNonZero(th3_line)
+
+        # only cars' density
+        th1_density = th1_density - th1_line_density
+        th2_density = th2_density - th2_line_density
+        th3_density = th3_density - th3_line_density
+
+        car_number1 = (th1_density / 41000)
+        car_number2 = (th2_density / 19000)
+        car_number3 = (th3_density / 12000)
+
+        total_car_number = (car_number1 + car_number2 + car_number3)
+
+        green_duration = 3 * total_car_number
+        green_duration = round(green_duration)
+
+        print("density of cars in the 1st road: ", total_car_number)
+        print("duration of green: ", green_duration)
+
+        j = green_duration * 10
+        j = int(j)
+        yellow2(), yel_red3()
+        red1(), red2(), green3(), red4()
+
+        while j >= 10:
+            ret, img = cap0.read()
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(img, str(j // 10), (30, 100), font, 4, (0, 255, 0), 5, cv2.LINE_AA)
+            cv2.imshow('Screen', img)
+
+            cv2.waitKey(100)
+            j = j - 1
+
+        img_counter += 1
+
+    elif img_counter % 4 == 3:
+
+        _, img = cap1.read()
+
+        img_name = "light2_original{}.png".format(img_counter)
+        cv2.imwrite(img_name, img)
+        img = cv2.imread(img_name, 0)
+
+        region1 = img[386:696, 0:768]
+        region2 = img[201:386, 0:768]
+        region3 = img[0:201, 0:768]
+
+        cv2.imwrite("light2_region1_frame_{}.png".format(img_counter), region1)
+        cv2.imwrite("light2_region2_frame_{}.png".format(img_counter), region2)
+        cv2.imwrite("light2_region3_frame_{}.png".format(img_counter), region3)
+
+        _, th1 = cv2.threshold(region1, 70, 255, cv2.THRESH_BINARY)
+        _, th2 = cv2.threshold(region2, 70, 255, cv2.THRESH_BINARY)
+        _, th3 = cv2.threshold(region3, 70, 255, cv2.THRESH_BINARY)
+
+        th1_line = th1[0:310, 324:430]
+        th2_line = th2[0:185, 324:430]
+        th3_line = th3[0:201, 324:410]
+
+        cv2.imwrite('thresh1.png', th1)
+        cv2.imwrite('thresh2.png', th2)
+        cv2.imwrite('thresh3.png', th3)
+        cv2.imwrite('thresh1_line.png', th1_line)
+        cv2.imwrite('thresh2_line.png', th2_line)
+        cv2.imwrite('thresh3_line.png', th3_line)
+
+        # total density
+        th1_density = cv2.countNonZero(th1)
+        th2_density = cv2.countNonZero(th2)
+        th3_density = cv2.countNonZero(th3)
+
+        # lines' density
+        th1_line_density = cv2.countNonZero(th1_line)
+        th2_line_density = cv2.countNonZero(th2_line)
+        th3_line_density = cv2.countNonZero(th3_line)
+
+        # only cars' density
+        th1_density = th1_density - th1_line_density
+        th2_density = th2_density - th2_line_density
+        th3_density = th3_density - th3_line_density
+
+        car_number1 = (th1_density / 41000)
+        car_number2 = (th2_density / 19000)
+        car_number3 = (th3_density / 12000)
+
+        total_car_number = (car_number1 + car_number2 + car_number3)
+        green_duration = 3 * total_car_number
+        green_duration = round(green_duration)
+
+        print("density of cars in the 2nd road: ", total_car_number)
+        print("duration of green: ", green_duration)
+
+        j = green_duration * 10
+        j = int(j)
+
+        yellow3(), yel_red4()
+        red1(), red2(), red3(), green4()
+
+        while j >= 10:
+            _, img = cap1.read()
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(img, str(j // 10), (30, 100), font, 4, (0, 255, 0), 5, cv2.LINE_AA)
+
+            cv2.imshow('Screen', img)
+            cv2.waitKey(100)
+            j = j - 1
+
+        img_counter += 1
+
+cap0.release()
+cap1.release()
+cap2.release()
+cap3.release()
+cv2.destroyAllWindows()
